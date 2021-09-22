@@ -20,13 +20,21 @@ let rec print_declLst = function
   | []    ->  ()
   | (Decl(id,init))::t  ->  Printf.printf "  (ID: %s) = (VALUE: %d)\n" id init;
                             print_declLst t
+let rec printArray = function
+  | []    ->  ()
+  | x::[] ->  Printf.printf "%d}\n" x
+  | h::t  ->  Printf.printf "%d, " h;
+              printArray t
 
 let print_stm s = 
   match s with
   | Stm_declLst (_, declLst)  -> 
       print_string "Declaration List of type INT:\n";
       print_declLst declLst
-  | Stm_arrayDecl _  -> ()
+  | Stm_arrayDecl (id,size,intLst)  -> 
+      Printf.printf 
+        "(ID: %s) = (VALUE: INT[%d]): {" id size;
+      printArray intLst
 
 let rec print_stmLst = function
   | []    ->  ()
