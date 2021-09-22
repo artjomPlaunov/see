@@ -6,7 +6,9 @@ type type_ =
 
 type decl = Decl of ident * int
 
-type stm = Stm_declLst of type_ * (decl list)
+type stm = 
+  | Stm_declLst   of type_ * (decl list)
+  | Stm_arrayDecl of ident * int * (int list)
 
 type block = Block of stm list
 
@@ -18,13 +20,13 @@ let rec print_declLst = function
   | []    ->  ()
   | (Decl(id,init))::t  ->  Printf.printf "  (ID: %s) = (VALUE: %d)\n" id init;
                             print_declLst t
-                      
 
 let print_stm s = 
   match s with
   | Stm_declLst (_, declLst)  -> 
       print_string "Declaration List of type INT:\n";
       print_declLst declLst
+  | Stm_arrayDecl _  -> ()
 
 let rec print_stmLst = function
   | []    ->  ()
