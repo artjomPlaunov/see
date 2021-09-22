@@ -1,0 +1,10 @@
+Function Name: func
+Return Type: VOID
+Declaration List of type INT:
+  (ID: a) = (VALUE: 5)
+Declaration List of type INT:
+  (ID: var) = (VALUE: 7)
+
+Function Name: main
+Return Type: INT
+

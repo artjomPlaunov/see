@@ -14,10 +14,10 @@
     }
 }
 
-let digit = ['0'-'0']
+let digit = ['0'-'9']
 let alpha = ['a'-'z' 'A'-'Z']
 
-let num = ['0'-'9']+
+let digits = ['0'-'9']+
 let id  = (alpha) (alpha|digit|'_')*
 
 let whitespace = [' ' '\t']+
@@ -40,7 +40,7 @@ rule read_token =
   | "void"      { VOID_TYPE  }
   | "return"    { RETURN    }
   | whitespace  { read_token lexbuf }
-  | digit       { INT (int_of_string (Lexing.lexeme lexbuf))}
+  | digits      { INT (int_of_string (Lexing.lexeme lexbuf))}
   | id          { ID  (Lexing.lexeme lexbuf) }
   | newline     { next_line lexbuf; read_token lexbuf }
   | eof         { EOF }
