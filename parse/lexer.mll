@@ -30,6 +30,8 @@ rule read_token =
   | "}"         { RBRACE    }
   | "="         { EQ        }
   | "+"         { PLUS      }
+  | "*"         { ASTERISK  }
+  | "-"         { MINUS     }
   | ","         { COMMA     }
   | "("         { LPAREN    }
   | ")"         { RPAREN    }

@@ -13,10 +13,21 @@ type type_ =
 (* A declaration consists of an identifier and an int value. *)
 type decl = Decl of ident * int [@@deriving show]
 
+type op = 
+  | Mul
+  | Add
+  | Sub [@@ deriving show]
+
 type  exp   = 
   | Return of exp 
   | Constant of int 
-  | Variable of ident [@@deriving show]
+  | Variable of ident 
+  | ArraySubscript of ident * int
+  | FunctionCall of ident * (exp list)
+  | Assign of ident * exp
+  | Arith of exp * op * exp
+  [@@ deriving show]
+
 
 (* A statement is either a declaration list or an array declaration. *)
 type stm = 

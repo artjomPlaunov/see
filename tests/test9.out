@@ -1,0 +1,21 @@
+(Ast.Prog
+   [(Ast.Fun (Ast.INT_T,
+       (Ast.ParamLst
+          [(Ast.Param (Ast.INT_T, (Ast.Ident "a")));
+            (Ast.Param (Ast.INT_T, (Ast.Ident "b")))]),
+       (Ast.Ident "test"),
+       (Ast.Block
+          [(Ast.Stm_declLst (Ast.INT_T, [(Ast.Decl ((Ast.Ident "c"), 0))]));
+            (Ast.Stm_exp (Ast.Return (Ast.Variable (Ast.Ident "c"))))])
+       ));
+     (Ast.Fun (Ast.INT_T, (Ast.ParamLst []), (Ast.Ident "main"),
+        (Ast.Block
+           [(Ast.Stm_arrayDecl ((Ast.Ident "a"), 5, [1; 2; 3; 4; 5]));
+             (Ast.Stm_exp
+                (Ast.FunctionCall ((Ast.Ident "test"),
+                   [(Ast.ArraySubscript ((Ast.Ident "a"), 2));
+                     (Ast.Constant 100)]
+                   )));
+             (Ast.Stm_exp (Ast.Return (Ast.Constant 0)))])
+        ))
+     ])
