@@ -21,12 +21,15 @@
 
 %start program
 
-%type <program> program
-%type <fun_def> fun_def
-%type <block>   block
-%type <stm>     stm
-%type <decl>    decl
-%type <type_>   type_
+%type <program>   program
+%type <fun_def>   fun_def
+%type <paramLst>  paramLst
+%type <param>     param
+%type <block>     block
+%type <stm>       stm
+%type <exp>       exp
+%type <decl>      decl
+%type <type_>     type_
 
 %%
 
@@ -35,8 +38,20 @@ program:
     {Prog(fun_defs)}
 
 fun_def:
-  | ret_type=type_; name=ID; LPAREN; RPAREN; LBRACE; b=block; RBRACE; 
-    {Fun(ret_type,name,b)}
+  | ret_type=type_; name=ID; 
+    LPAREN; 
+    params=paramLst;
+    RPAREN; 
+    LBRACE; b=block; RBRACE; 
+    {Fun(ret_type,params,(Ident name),b)}
+
+paramLst:
+  | params = separated_list(COMMA,param);
+    {ParamLst(params)}
+
+param:
+  | var_type=type_; name=ID;
+    {Param(var_type,(Ident name))}
 
 block:
   | stm_list = list(stm); 
@@ -47,19 +62,21 @@ stm:
     {Stm_declLst(var_type,decl_list)}
   | type_; name=ID; LBRACK; size=INT; RBRACK; EQ; LBRACE;
     init_lst=separated_list(COMMA,INT); RBRACE; SEMICOLON;
-    {Stm_arrayDecl(name,size,init_lst)};
+    {Stm_arrayDecl((Ident name),size,init_lst)}
+  | stm_exp=exp; {Stm_exp(stm_exp)}
+
+exp:
+  | RETURN; return_val=exp; SEMICOLON; {Return(return_val)} 
+  | constant = INT; {Constant(constant)}
+  | var=ID; {Variable(Ident(var))}
 
 decl:
   | var_name=ID; EQ; value=INT; 
-    {Decl(var_name,value)}
+    {Decl((Ident var_name),value)}
 
 type_:
   | INT_TYPE    {INT_T}
   | VOID_TYPE   {VOID_T}
-
-
-
-
 
 
 

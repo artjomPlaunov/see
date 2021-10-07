@@ -1,15 +1,22 @@
-Function Name: func
-Return Type: INT
-Declaration List of type INT:
-  (ID: a) = (VALUE: 5)
-  (ID: b) = (VALUE: 6)
-Declaration List of type INT:
-  (ID: var) = (VALUE: 7)
-  (ID: b) = (VALUE: 8)
-
-Function Name: main
-Return Type: INT
-Declaration List of type INT:
-  (ID: variable) = (VALUE: 132312321)
-  (ID: fefew) = (VALUE: 4343232)
-
+(Ast.Prog
+   [(Ast.Fun (Ast.INT_T, (Ast.ParamLst []), (Ast.Ident "func"),
+       (Ast.Block
+          [(Ast.Stm_declLst (Ast.INT_T,
+              [(Ast.Decl ((Ast.Ident "a"), 5));
+                (Ast.Decl ((Ast.Ident "b"), 6))]
+              ));
+            (Ast.Stm_declLst (Ast.INT_T,
+               [(Ast.Decl ((Ast.Ident "var"), 7));
+                 (Ast.Decl ((Ast.Ident "b"), 8))]
+               ))
+            ])
+       ));
+     (Ast.Fun (Ast.INT_T, (Ast.ParamLst []), (Ast.Ident "main"),
+        (Ast.Block
+           [(Ast.Stm_declLst (Ast.INT_T,
+               [(Ast.Decl ((Ast.Ident "variable"), 132312321));
+                 (Ast.Decl ((Ast.Ident "fefew"), 4343232))]
+               ))
+             ])
+        ))
+     ])

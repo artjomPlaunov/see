@@ -1,66 +1,41 @@
-type ident = string
+(* Identifiers. *)
+type ident = Ident of string [@@deriving show]
 
+(* Three pre-defined program types:
+   -  ints
+   -  void
+   -  arrays (defined by the size of the array). *) 
 type type_ = 
   | INT_T
-  | VOID_T
+  | VOID_T 
+  (*| ARRAY_T of int*) [@@deriving show]
 
-type decl = Decl of ident * int
+(* A declaration consists of an identifier and an int value. *)
+type decl = Decl of ident * int [@@deriving show]
 
+type  exp   = 
+  | Return of exp 
+  | Constant of int 
+  | Variable of ident [@@deriving show]
+
+(* A statement is either a declaration list or an array declaration. *)
 type stm = 
   | Stm_declLst   of type_ * (decl list)
-  | Stm_arrayDecl of ident * int * (int list)
+  | Stm_arrayDecl of ident * int * (int list) 
+  | Stm_exp       of exp  [@@deriving show] 
 
-type block = Block of stm list
+(* A block is a list of statements. *)
+type block = Block of stm list [@@deriving show]
 
-type fun_def = Fun of type_ * ident * block
+(* A parameter is a type with an identifier. *)
+type param = Param of type_ * ident [@@deriving show]
 
-type program = Prog of fun_def list
+(* A parameter list is a list of parameters. *)
+type paramLst = ParamLst of param list [@@deriving show]
 
-let rec print_declLst = function
-  | []    ->  ()
-  | (Decl(id,init))::t  ->  Printf.printf "  (ID: %s) = (VALUE: %d)\n" id init;
-                            print_declLst t
-let rec printArray = function
-  | []    ->  ()
-  | x::[] ->  Printf.printf "%d}\n" x
-  | h::t  ->  Printf.printf "%d, " h;
-              printArray t
+(* A function consists of a type, parameter list, ID, and a block. *)
+type fun_def = Fun of type_ * paramLst * ident * block [@@deriving show]
 
-let print_stm s = 
-  match s with
-  | Stm_declLst (_, declLst)  -> 
-      print_string "Declaration List of type INT:\n";
-      print_declLst declLst
-  | Stm_arrayDecl (id,size,intLst)  -> 
-      Printf.printf 
-        "(ID: %s) = (VALUE: INT[%d]): {" id size;
-      printArray intLst
+(* A program is a list of functions. *)
+type program = Prog of fun_def list [@@deriving show]
 
-let rec print_stmLst = function
-  | []    ->  ()
-  | h::t  ->  print_stm h;
-              print_stmLst t
-
-let print_block = function
-  | Block stmLst  ->  print_stmLst stmLst
-
-let print_fun f =
-  let (t,id,b) = f in
-  let s = 
-    match t with
-    | INT_T   ->  "INT"
-    | VOID_T  ->  "VOID"
-  in
-    print_string ("Function Name: " ^ id ^ "\n");
-    print_string ("Return Type: " ^ s ^ "\n");
-    print_block b;
-    print_string "\n"
-
-
-let rec print_funs = function
-  | []    ->  ()
-  | (Fun (ty,id,b))::t  ->  print_fun (ty,id,b);
-                            print_funs t
-
-let print_program = function
-  | Prog funs -> print_funs funs

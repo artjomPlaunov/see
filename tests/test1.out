@@ -1,9 +1,8 @@
-Function Name: main
-Return Type: INT
-
-Function Name: func
-Return Type: INT
-
-Function Name: ImaFunction
-Return Type: INT
-
+(Ast.Prog
+   [(Ast.Fun (Ast.INT_T, (Ast.ParamLst []), (Ast.Ident "main"),
+       (Ast.Block [])));
+     (Ast.Fun (Ast.INT_T, (Ast.ParamLst []), (Ast.Ident "func"),
+        (Ast.Block [])));
+     (Ast.Fun (Ast.INT_T, (Ast.ParamLst []), (Ast.Ident "ImaFunction"),
+        (Ast.Block [])))
+     ])

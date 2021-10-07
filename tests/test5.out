@@ -1,0 +1,7 @@
+(Ast.Prog
+   [(Ast.Fun (Ast.INT_T,
+       (Ast.ParamLst
+          [(Ast.Param (Ast.INT_T, (Ast.Ident "a")));
+            (Ast.Param (Ast.INT_T, (Ast.Ident "b")))]),
+       (Ast.Ident "add"), (Ast.Block [])))
+     ])

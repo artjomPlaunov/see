@@ -1,10 +1,11 @@
-Function Name: func
-Return Type: VOID
-Declaration List of type INT:
-  (ID: a) = (VALUE: 5)
-Declaration List of type INT:
-  (ID: var) = (VALUE: 7)
-
-Function Name: main
-Return Type: INT
-
+(Ast.Prog
+   [(Ast.Fun (Ast.VOID_T, (Ast.ParamLst []), (Ast.Ident "func"),
+       (Ast.Block
+          [(Ast.Stm_declLst (Ast.INT_T, [(Ast.Decl ((Ast.Ident "a"), 5))]));
+            (Ast.Stm_declLst (Ast.INT_T, [(Ast.Decl ((Ast.Ident "var"), 7))]
+               ))
+            ])
+       ));
+     (Ast.Fun (Ast.INT_T, (Ast.ParamLst []), (Ast.Ident "main"),
+        (Ast.Block [])))
+     ])

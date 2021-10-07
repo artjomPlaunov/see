@@ -1,0 +1,23 @@
+(Ast.Prog
+   [(Ast.Fun (Ast.INT_T,
+       (Ast.ParamLst
+          [(Ast.Param (Ast.INT_T, (Ast.Ident "a")));
+            (Ast.Param (Ast.INT_T, (Ast.Ident "b")))]),
+       (Ast.Ident "add"),
+       (Ast.Block
+          [(Ast.Stm_declLst (Ast.INT_T, [(Ast.Decl ((Ast.Ident "c"), 0))]))])
+       ));
+     (Ast.Fun (Ast.INT_T, (Ast.ParamLst []), (Ast.Ident "main"),
+        (Ast.Block
+           [(Ast.Stm_declLst (Ast.INT_T,
+               [(Ast.Decl ((Ast.Ident "a"), 1));
+                 (Ast.Decl ((Ast.Ident "b"), 2))]
+               ));
+             (Ast.Stm_arrayDecl ((Ast.Ident "f"), 2, [0; 0]));
+             (Ast.Stm_declLst (Ast.INT_T, [(Ast.Decl ((Ast.Ident "c"), 3))]));
+             (Ast.Stm_arrayDecl ((Ast.Ident "d"), 4, [4; 5; 6; 7]));
+             (Ast.Stm_declLst (Ast.INT_T, [(Ast.Decl ((Ast.Ident "s"), 0))]));
+             (Ast.Stm_declLst (Ast.INT_T, [(Ast.Decl ((Ast.Ident "j"), 0))]))
+             ])
+        ))
+     ])
