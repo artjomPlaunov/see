@@ -1,6 +1,7 @@
 open Ast
 open Core
 
+(* block -> (declaration list, remainder of block). *)
 let splitBlock block = 
   let block = match block with Block b -> b in
   let rec aux res lst = 
@@ -11,10 +12,12 @@ let splitBlock block =
                           aux res t
   in aux [] block
 
+(* Parameter List -> # of bytes of storage required for parameters. *)
 let getParamLstSize p = 
   match p with
   | ParamLst l -> (List.length l)*4
 
+(* Declaration List -> # of bytes of storage required for declarations. *)
 let getDeclsSize d = 
   let rec aux res = function
   | []                          ->  res
@@ -23,15 +26,19 @@ let getDeclsSize d =
   | _ -> res
   in aux 0 d
 
+(* Parameter List -> Declaration List -> # of bytes of stack space needed. *)
 let getLocalsSize paramLst decls =
   let l1 = getParamLstSize paramLst in
   let l2 = getDeclsSize decls in
   l1 + l2
 
+(* x86 assembly -> stack push length -> append instruction to push space onto 
+   the stack. *)
 let pushStack res l = 
   let s = Format.asprintf "  subq $%d, %%rsp" l in
   res@[s] 
-    
+   
+(* int n -> register used for passing in argument # n. *)
 let getParamReg num = 
   match num with
   | 1 ->  "edi"
@@ -42,11 +49,15 @@ let getParamReg num =
   | 6 ->  "r9d"
   | _ ->  "rError" 
 
+(*  Op type -> Corresponding x86 instruction prefix. *)
 let getOpInstr op = 
   match op with
   | Mul -> "imull"
   | Add -> "addl"
   | Sub -> "sub;"
+
+(*  x86 -> Parameter List -> $SP -> (id -> offset) map ->
+    Append instructions to x86 code to push parameters onto the stack. *)  
 
 let pushParams res paramLst nextOffset offsetMap = 
   let pLst = match paramLst with ParamLst lst -> lst in
@@ -145,6 +156,17 @@ let genBlock res stms offset offsetMap =
         let s = Format.asprintf "  call %s" id in
         let res = genFunCall res offsetMap eLst in
         res@[s]
+    | Return (Constant c) -> 
+        let i1 = Format.asprintf "  movl $%d, %%eax" c in
+        let i2 = "  leave" in
+        let i3 = "  ret" in
+        res@[i1;i2;i3]
+    | Return (Variable (Ident id)) ->
+        let src = getRBPOffset id offsetMap in
+        let i1 = Format.asprintf "  movl %s, %%eax" src in
+        let i2 = "  leave" in
+        let i3 = "  ret" in
+        res@[i1;i2;i3]
     | _ -> res
   in 
 

@@ -14,6 +14,9 @@ test:
   movl -4(%rbp), %eax
   imull -8(%rbp), %eax
   movl %eax, -12(%rbp)
+  movl -12(%rbp), %eax
+  leave
+  ret
 
 main:
   pushq %rbp
@@ -27,4 +30,7 @@ main:
   movl -20(%rbp) edi
   movl $100 esi
   call test
+  movl $0, %eax
+  leave
+  ret
 
