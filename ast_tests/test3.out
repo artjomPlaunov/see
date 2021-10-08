@@ -7,7 +7,7 @@
               ));
             (Ast.Stm_declLst (Ast.INT_T,
                [(Ast.Decl ((Ast.Ident "var"), 7));
-                 (Ast.Decl ((Ast.Ident "b"), 8))]
+                 (Ast.Decl ((Ast.Ident "d"), 8))]
                ))
             ])
        ));

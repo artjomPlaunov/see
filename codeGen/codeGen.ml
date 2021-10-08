@@ -54,18 +54,46 @@ let pushParams res paramLst nextOffset offsetMap =
         aux (res@[s]) t (nextOffset-4) offsetMap (paramNum+1)
   in aux res pLst nextOffset offsetMap 1
 
+let rec pushDecls res decls offset offsetMap = 
+  match decls with
+  | []  ->  (res,offset,offsetMap)
+  | (Decl (Ident id,value))::t ->
+      let offsetMap = Map.add_exn offsetMap ~key:id ~data:value in
+      let s = Format.asprintf "  movl $%d %d(%%rbp)" value offset in
+      pushDecls (res@[s]) t (offset-4) offsetMap
+
+let pushArrayVals res vals offset =
+  let rec aux acc offset = function
+    | []    ->  (acc,offset)
+    | h::t  ->  let s = Format.asprintf "  movl $%d %d(%%rbp)" h offset in
+                aux (acc@[s]) (offset-4) t in 
+  let (tl,offset) = aux [] offset (List.rev vals) in
+  ((res@(List.rev tl)),offset)
+
+let rec pushAllDecls res allDecls offset offsetMap = 
+  match allDecls with
+  | []  ->  (res,offset,offsetMap)
+  | (Stm_declLst (_,decls))::t ->
+      let (res,offset,offsetMap) =  pushDecls res decls offset offsetMap in
+      pushAllDecls res t offset offsetMap
+  | (Stm_arrayDecl (Ident id, size, values))::t ->
+      let offsetMap = Map.add_exn offsetMap ~key:id ~data:(offset-(4*size)) in
+      let (res,offset) = pushArrayVals res values offset in
+      pushAllDecls res t offset offsetMap
+  | _ -> (res,offset,offsetMap)
+
 let genFun f = 
   let Fun (_,paramLst,Ident id,block) = f in
   let res = [id ^ ":"; "  pushq %rbp"; "  movq %rsp, %rbp"] in
-  let (decls,_) = splitBlock block in
+  let (decls,block) = splitBlock block in
   let offsetMap = Map.empty (module String) in
   let len = getLocalsSize paramLst decls in
   let offset = (-4) in
   let res = pushStack res len in
-  let (res,_,_) = pushParams res paramLst offset offsetMap in 
+  let (res,offset,offsetMap) = pushParams res paramLst offset offsetMap in 
+  let (res,offset,offsetMap) = pushAllDecls res decls offset offsetMap in
+  let res = genBlock res block 
   res
-(*
-  ["pushq %rbp"; "movq %rsp, %rbp"; "popq %rbp"; "ret"] *)
 
 (* genProg is the workhorse.
    AST -> File Name -> x86 Assembly -> Output File. *)
