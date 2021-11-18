@@ -11,20 +11,31 @@ type type_ =
   (*| ARRAY_T of int*) [@@deriving show]
 
 (* A declaration consists of an identifier and an int value. *)
-type decl = Decl of ident * int [@@deriving show]
+type decl = 
+  | Int_decl    of ident * int 
+  | Var_decl    of ident * ident
+  | Undef_decl  of ident
+[@@deriving show]
 
 type op = 
   | Mul
   | Add
   | Sub [@@ deriving show]
 
+type condOp = 
+  | Lt
+  | Gt
+  | Leq [@@ deriving show]
+
 type  exp   = 
   | Return of exp 
   | Constant of int 
   | Variable of ident 
-  | ArraySubscript of ident * int
+  | ArraySubscriptInt of ident * int
+  | ArraySubscriptVar of ident * ident
   | FunctionCall of ident * (exp list)
   | Assign of ident * exp
+  | Cond   of exp * condOp * exp
   | Arith of exp * op * exp
   [@@ deriving show]
 
@@ -33,10 +44,13 @@ type  exp   =
 type stm = 
   | Stm_declLst   of type_ * (decl list)
   | Stm_arrayDecl of ident * int * (int list) 
-  | Stm_exp       of exp  [@@deriving show] 
-
+  | Stm_exp       of exp  
+  | Stm_for       of exp * exp * exp * block   
+  | Stm_if        
+  | Stm_ifElse    of exp * block * block
+and
 (* A block is a list of statements. *)
-type block = Block of stm list [@@deriving show]
+block = Block of stm list [@@deriving show]
 
 (* A parameter is a type with an identifier. *)
 type param = Param of type_ * ident [@@deriving show]

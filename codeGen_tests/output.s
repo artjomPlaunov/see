@@ -6,7 +6,7 @@ test:
   movl %esi, -8(%rbp)
   movl $0 -12(%rbp)
   movl -4(%rbp), %eax
-  sub; -8(%rbp), %eax
+  subl -8(%rbp), %eax
   movl %eax, -12(%rbp)
   movl -4(%rbp), %eax
   addl -8(%rbp), %eax

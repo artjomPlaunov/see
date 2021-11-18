@@ -1,6 +1,8 @@
 open Ast
 open Core
 
+let lbl = ref 0
+
 (* block -> (declaration list, remainder of block). *)
 let splitBlock block = 
   let block = match block with Block b -> b in
@@ -8,6 +10,8 @@ let splitBlock block =
   match lst with
     | []              ->  (res,[])
     | (Stm_exp _)::_  ->  (res, lst)
+    | (Stm_for _)::_  ->  (res, lst)
+    | (Stm_ifElse _)::_  ->  (res, lst)
     | h::t            ->  let res = res@[h] in
                           aux res t
   in aux [] block
@@ -54,7 +58,7 @@ let getOpInstr op =
   match op with
   | Mul -> "imull"
   | Add -> "addl"
-  | Sub -> "sub;"
+  | Sub -> "subl"
 
 (*  x86 -> Parameter List -> $SP -> (id -> offset) map ->
     Append instructions to x86 code to push parameters onto the stack. *)  
@@ -62,6 +66,17 @@ let getOpInstr op =
 let pushParams res paramLst nextOffset offsetMap = 
   let pLst = match paramLst with ParamLst lst -> lst in
   let rec aux res pLst nextOffset offsetMap paramNum =  
+    if paramNum > 6 then (
+      let rec aux' res pLst nextOffset offsetMap paramNum = 
+      match pLst with
+      | [] -> (res, nextOffset,offsetMap)
+      | Param((INT_T,Ident id))::t |  Param((VOID_T,Ident id))::t ->  
+        let offsetMap = Map.add_exn offsetMap ~key:id ~data:(16+(4*paramNum)) 
+        in
+        aux' res t nextOffset offsetMap (paramNum+1)
+      in aux' res (List.rev pLst) nextOffset offsetMap 0
+    ) 
+    else
     match pLst with
     | []          ->  (res,nextOffset,offsetMap)
     | Param((INT_T,Ident id))::t |  Param((VOID_T,Ident id))::t ->  
@@ -74,10 +89,23 @@ let pushParams res paramLst nextOffset offsetMap =
 let rec pushDecls res decls offset offsetMap = 
   match decls with
   | []  ->  (res,offset,offsetMap)
-  | (Decl (Ident id,value))::t ->
+  | (Int_decl (Ident id,value))::t ->
       let offsetMap = Map.add_exn offsetMap ~key:id ~data:offset in
       let s = Format.asprintf "  movl $%d %d(%%rbp)" value offset in
       pushDecls (res@[s]) t (offset-4) offsetMap
+  | (Var_decl (Ident id, Ident value))::t -> 
+      let srcOffset = 
+        match Map.find offsetMap value with
+        | None -> (-99999)
+        | Some n -> n in
+      let offsetMap = Map.add_exn offsetMap ~key:id ~data:offset in
+      let i1 = Format.asprintf "  movl %d(%%rbp) %%eax" srcOffset in
+      let i2 = Format.asprintf "  movl %%eax %d(%%rbp)" offset in
+      pushDecls (res@[i1]@[i2]) t (offset-4) offsetMap
+  | (Undef_decl (Ident id))::t ->
+      let offsetMap = Map.add_exn offsetMap ~key:id ~data:offset in
+      pushDecls (res) t (offset-4) offsetMap
+
 
 let pushArrayVals res vals offset =
   let rec aux acc offset = function
@@ -117,7 +145,22 @@ let getRBPArrayOffset id idx offsetMap =
 
 let genFunCall res offsetMap eLst =
   let rec aux res offsetMap eLst argNum = 
-    if argNum > 6 then res else
+    if argNum > 6 then (
+    let rec aux' res offsetMap eLst argNum = 
+    match eLst with 
+      | [] -> res
+      | (Variable (Ident id))::t ->
+        let i1 = Format.asprintf "  subq $4, %%rsp" in
+        let src1 = getRBPOffset id offsetMap in 
+        let i2 = Format.asprintf "  movl %s, %%eax" src1 in
+        let i3 = Format.asprintf "  movl %%eax, 0(%%rsp)" in
+        aux' (res@[i1;i2;i3]) offsetMap t (argNum+1)
+      | _ -> res
+    in
+    aux' res offsetMap (List.rev(eLst)) 0 
+    )
+    else
+    
     let r = getParamReg argNum in
     match eLst with
     | []  ->  res
@@ -129,7 +172,7 @@ let genFunCall res offsetMap eLst =
         let src = getRBPOffset id offsetMap in
         let i1 = Format.asprintf "  movl %s %s" src r in
         aux (res@[i1]) offsetMap t (argNum+1)
-    | (ArraySubscript ((Ident id), idx))::t ->
+    | (ArraySubscriptInt ((Ident id), idx))::t ->
         let src = getRBPArrayOffset id idx offsetMap in
         let i1 = Format.asprintf "  movl %s %s" src r in
         aux (res@[i1]) offsetMap t (argNum+1)
@@ -152,6 +195,25 @@ let genBlock res stms offset offsetMap =
         let i2 = Format.asprintf "  %s %s, %%eax" opInstr source2 in
         let i3 = Format.asprintf "  movl %%eax, %s" dest in
         res@[i1;i2;i3]
+    | Assign 
+      (Ident id, Arith (Variable (Ident id1) ,op, Constant v)) ->
+        let opInstr = getOpInstr op in
+        let source1 = getRBPOffset id1 offsetMap in
+        let dest    = getRBPOffset id  offsetMap in
+        let i1 = Format.asprintf "  movl %s, %%eax" source1 in
+        let i2 = Format.asprintf "  %s %d, %%eax" opInstr v in
+        let i3 = Format.asprintf "  movl %%eax, %s" dest in
+        res@[i1;i2;i3]
+    | Assign (Ident id, Constant v) ->
+        let source = getRBPOffset id offsetMap in
+        let i = Format.asprintf "  movl $%d, %s" v source in
+        res@[i]
+    | Assign (Ident id1, FunctionCall (Ident id2, eLst)) ->
+        let s = Format.asprintf "  call %s" id2 in
+        let res = genFunCall (res) offsetMap eLst in
+        let dest = getRBPOffset id1 offsetMap in
+        let i1 = Format.asprintf "  movl %%eax, %s" dest in
+        res@[s;i1]
     | FunctionCall ((Ident id), eLst) ->
         let s = Format.asprintf "  call %s" id in
         let res = genFunCall res offsetMap eLst in
@@ -176,6 +238,42 @@ let genBlock res stms offset offsetMap =
     | (Stm_exp e)::t -> 
         let res = aux res e offset offsetMap in
         aux' res t offset offsetMap
+    | (Stm_for (e1,
+                Cond(Variable (Ident (id)), Leq, Constant v),e2,Block b))::t ->
+        (* Generate code for index initialization. *)
+        let res = aux res e1 offset offsetMap in
+        let lbl1 = Format.asprintf "L%d" !lbl in 
+        let () = lbl := !lbl + 1 in
+        let lbl2 = Format.asprintf "L%d" !lbl in
+        let () = lbl := !lbl + 1 in
+        let i1 = Format.asprintf "  jmp %s" lbl1 in
+        let i2 = Format.asprintf "%s:" lbl2 in
+        let res = res@[i1] in
+        let res = res@[i2] in
+        let res = aux' res b offset offsetMap in  
+        let res = aux res e2 offset offsetMap in
+        let i3 = Format.asprintf "%s:" lbl1 in
+        let res = res@[i3] in
+        let src = getRBPOffset id offsetMap in
+        let i4 = Format.asprintf "  cmpl $%d, %s" v src in
+        let i5 = Format.asprintf "  jle %s" lbl2 in
+        aux' (res@[i4;i5;]) t offset offsetMap
+    | (Stm_ifElse (Cond(ArraySubscriptInt(Ident id,v1), Gt, Constant v2),      
+                    Block b1, Block b2))::t ->
+        let src = getRBPArrayOffset id v1 offsetMap in
+        let i1 = Format.asprintf "  movl %s, %%eax" src in
+        let i2 = Format.asprintf "  cmpl %d, %%eax" v2 in 
+        let lbl1 = Format.asprintf ".L%d" !lbl in
+        let () = lbl := !lbl + 1 in
+        let i3 = Format.asprintf "  jg %s" lbl1 in
+        let lbl2 = Format.asprintf ".L%d" !lbl in
+        let () = lbl := !lbl + 1 in
+        let res = aux' (res@[i1;i2;i3]) b2 offset offsetMap in
+        let i4 = Format.asprintf "  jmp %s" lbl2 in
+        let i5 = Format.asprintf "%s:" lbl1 in
+        let res = aux' (res) b1 offset offsetMap in
+        let i6 = Format.asprintf "%s:" lbl2 in
+        aux' (res@[i6]) t offset offsetMap
     | _ ->  res
   in 
   aux' res stms offset offsetMap

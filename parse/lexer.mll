@@ -17,7 +17,7 @@
 let digit = ['0'-'9']
 let alpha = ['a'-'z' 'A'-'Z']
 
-let digits = ['0'-'9']+
+let digits = ('-')?(['0'-'9']+)
 let id  = (alpha) (alpha|digit|'_')*
 
 let whitespace = [' ' '\t']+
@@ -28,6 +28,9 @@ rule read_token =
   parse
   | "{"         { LBRACE    }
   | "}"         { RBRACE    }
+  | "<="        { LEQ       }
+  | "<"         { LT        }
+  | ">"         { GT        }
   | "="         { EQ        }
   | "+"         { PLUS      }
   | "*"         { ASTERISK  }
@@ -39,8 +42,11 @@ rule read_token =
   | "["         { LBRACK    }
   | "]"         { RBRACK    }
   | "int"       { INT_TYPE  }
-  | "void"      { VOID_TYPE  }
+  | "void"      { VOID_TYPE }
   | "return"    { RETURN    }
+  | "for"       { FOR       }
+  | "if"        { IF        }
+  | "else"      { ELSE      }
   | whitespace  { read_token lexbuf }
   | digits      { INT (int_of_string (Lexing.lexeme lexbuf))}
   | id          { ID  (Lexing.lexeme lexbuf) }
